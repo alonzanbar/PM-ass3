@@ -10,10 +10,12 @@ def linston(freq,s, lam , x):
 def read_data_lines(file):
     corpus=[]
     docs_size=[]
+    words_count = collections.Counter()
     vocab = set()
     with open(file, 'r') as f:
         lines = f.readlines()
         line_num = 0
+
     while line_num < len(lines):
         line = lines[line_num]
         y = line.split()[2:]
@@ -22,13 +24,19 @@ def read_data_lines(file):
         line = lines[line_num]
         words = line.split()
         c = collections.Counter(words)
-        vocab|=set(words)
+        words_count+=c
         corpus.append((c,y))
-        docs_size.append(sum(c.values()))
         line_num += 2
+    words_count = {x:words_count[x] for x in words_count if words_count[x]>3}
+    for c,y in corpus:
+        for w,v in list(c.items()):
+            if w not in words_count:
+                c.pop(w)
+        docs_size.append(sum(c.values()))
+        vocab=set(words_count.keys())
     return corpus, docs_size,vocab
 
-if __name__=='main':
+if __name__=='__main__':
     cor = read_data_lines("dataset/develop.txt")
 pass
 
