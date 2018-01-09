@@ -3,8 +3,8 @@ import numpy as np
 from utils import *
 
 SUBJ_NUM = 9
-LAMDA = 0.2
-EPSILON = 0.1**10
+LAMDA = 0.3
+EPSILON = 0.1**5
 K=10
 
 cor,docs_size,vocab = read_data_lines("dataset/develop.txt")
@@ -30,7 +30,11 @@ def calculate_Pki():
                 temp[i][w2id[w]] += Wti[t][i] * v
     for i in range(SUBJ_NUM):
         for w in w2id:
-            Pik[i][w2id[w]]= (temp[i][w2id[w]] + LAMDA) / (denom[i] +  lang_vocab_len * LAMDA)
+            Pik[i][w2id[w]]= (temp[i][w2id[w]] + LAMDA) / (denom[i] +  vocab_len * LAMDA)
+    np.set_printoptions(formatter={'float': '{: 0.4f}'.format})
+    #print("PiK :")
+    #print(np.sum(Pik,axis=1))
+
 
 
 def calculate_alpha():
@@ -48,12 +52,38 @@ def calculate_Wti():
     for t in range(documents_len):
         z = Zti[t]
         m= Mt[t]
-        sum_z= sum([np.e**(i-m) for i in z if (i-m)>=-K])
+        sum_z= sum([np.e**(i-m) for i in z ])
         for i in range(len(z)):
             if (z[i]-m)<-K:
                 Wti[t][i]=0
             else:
                 Wti[t][i] = np.e**(z[i]-m) / sum_z
+    #print("WtI : ")
+    #print(np.sum(Wti, axis=0))
+
+# def calculate_Wti():
+#     for t in range(len(Ntk)):
+#         z = np.zeros(SUBJ_NUM)
+#         sm=0
+#         for i in range(SUBJ_NUM):
+#             skm = 0
+#             for k,v in Ntk[t].items():
+#                 skm += v * np.log(Pik[i][w2id[k]])
+#             z[i] = np.log(alpha[i])+skm
+#             sm += np.e**z[i]
+#
+#         m = np.max(z)
+#         smr = 0
+#         for i in range(SUBJ_NUM):
+#             if ((z[i]-m)>=-K):
+#                 smr +=np.e**(z[i]-m)
+#
+#         for i in range(SUBJ_NUM):
+#             if (z[i] - m < -K):
+#                 Wti[t][i]=0
+#             else:
+#                 Wti[t][i] = np.e**(z[i]-m)/smr
+
 
 def caclculate_Zti():
     for t in range(documents_len):
@@ -64,7 +94,6 @@ def caclculate_Zti():
             Zti[t][i] = np.log(alpha[i])+z[i]
 
         Mt[t] = max(Zti[t])
-
     pass
 
 def calculate_loss():
@@ -111,7 +140,7 @@ if __name__ == "__main__":
     calculate_alpha()
     caclculate_Zti()
     accuracy()
-    for it in range(10):
+    for it in range(30):
         # E step
         calculate_Wti()
 
@@ -119,6 +148,7 @@ if __name__ == "__main__":
         calculate_Pki()
         calculate_alpha()
         caclculate_Zti()
+        #print(alpha)
 
         # loss
         loss = calculate_loss()
