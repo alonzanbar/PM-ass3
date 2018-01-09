@@ -1,3 +1,4 @@
+import operator
 import numpy as np
 from utils import *
 
@@ -16,21 +17,20 @@ Zti = np.zeros((documents_len,SUBJ_NUM))
 Mt = np.zeros(documents_len)
 Pik  = np.zeros((SUBJ_NUM, vocab_len))
 alpha= np.zeros(SUBJ_NUM)
-
+lang_vocab_len = 300000  # len(vocabulary) ** 2 #vacebulary length
 
 
 def calculate_Pki():
     denom = np.zeros(SUBJ_NUM)
+    temp = np.zeros((SUBJ_NUM,vocab_len))
     for t,doc_size in enumerate(docs_size):
         for i in range(SUBJ_NUM):
             denom[i] += Wti[t][i] * doc_size
             for w, v in Ntk[t].items():
-                Pik[i][w2id[w]] += Wti[t][i] * v
-
-    for t in range(documents_len):
-        for w,v in Ntk[t].items():
-            for i in range(SUBJ_NUM):
-                Pik[i][w2id[w]]= (Pik[i][w2id[w]] + LAMDA) / (denom[i] + vocab_len ** 2 * LAMDA)
+                temp[i][w2id[w]] += Wti[t][i] * v
+    for i in range(SUBJ_NUM):
+        for w in w2id:
+            Pik[i][w2id[w]]= (temp[i][w2id[w]] + LAMDA) / (denom[i] +  lang_vocab_len * LAMDA)
 
 
 def calculate_alpha():
@@ -38,7 +38,7 @@ def calculate_alpha():
     sums = np.sum(Wti,axis=0)
     for i in range(SUBJ_NUM):
         if sums[i] == 0:
-            sums[i] == EPSILON
+            sums[i] = EPSILON
         alpha1= sums[i]/documents_len
         alpha[i] = alpha1
     alpha = alpha /sum(alpha)
@@ -48,9 +48,9 @@ def calculate_Wti():
     for t in range(documents_len):
         z = Zti[t]
         m= Mt[t]
-        sum_z= sum([np.e**(i-m) for i in z if i-m>=-K])
+        sum_z= sum([np.e**(i-m) for i in z if (i-m)>=-K])
         for i in range(len(z)):
-            if z[i]-m<-K:
+            if (z[i]-m)<-K:
                 Wti[t][i]=0
             else:
                 Wti[t][i] = np.e**(z[i]-m) / sum_z
@@ -62,7 +62,8 @@ def caclculate_Zti():
             for w,v in Ntk[t].items():
                 z[i]+= v*np.log(Pik[i][w2id[w]])
             Zti[t][i] = np.log(alpha[i])+z[i]
-        Mt[t] = max(z)
+
+        Mt[t] = max(Zti[t])
 
     pass
 
@@ -71,10 +72,35 @@ def calculate_loss():
     for t in range(documents_len):
         tl=0
         for i in range(SUBJ_NUM):
-            if Zti[t][i] - Mt[t] >= -K:
+            if (Zti[t][i] - Mt[t])>= -K:
                 tl+=np.e**(Zti[t][i] - Mt[t])
+            else:
+                pass
         loss+=Mt[t] + np.log(tl)
     return loss
+
+def accuracy():
+    categuries =defaultdict(lambda: defaultdict(int))
+    clusters = defaultdict(list)
+    for t in range(documents_len):
+        c = np.argmax(Wti[t])
+        clusters[c].append(t)
+        for ci in docs_subj[t]:
+            categuries[c][ci] += 1
+
+
+    finalCat = {}
+    for c in range(SUBJ_NUM):
+        if len(categuries[c])>0:
+            finalCat[c] = (max(collections.Counter(categuries[c]).items(), key=operator.itemgetter(1))[0])
+
+    correct = 0
+    for c,vec in clusters.items():
+        for t in vec:
+            if finalCat[c] in docs_subj[t]:
+                correct+= 1
+
+    print("accuracy -> " + str(correct/len(Wti)))
 
 if __name__ == "__main__":
 
@@ -84,8 +110,8 @@ if __name__ == "__main__":
     calculate_Pki()
     calculate_alpha()
     caclculate_Zti()
-
-    for it in range(30):
+    accuracy()
+    for it in range(10):
         # E step
         calculate_Wti()
 
@@ -97,6 +123,8 @@ if __name__ == "__main__":
         # loss
         loss = calculate_loss()
         print(loss)
+        accuracy()
+
     pass
 
 
