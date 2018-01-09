@@ -16,10 +16,8 @@ Zti = np.zeros((documents_len,SUBJ_NUM))
 Mt = np.zeros(documents_len)
 Pik  = np.zeros((SUBJ_NUM, vocab_len))
 alpha= np.zeros(SUBJ_NUM)
-for t in range(documents_len):
-    Wti[t][t % SUBJ_NUM]=1
 
-    pass
+
 
 def calculate_Pki():
     denom = np.zeros(SUBJ_NUM)
@@ -74,14 +72,18 @@ def calculate_loss():
         tl=0
         for i in range(SUBJ_NUM):
             if Zti[t][i] - Mt[t] >= -K:
-                tl+=np.e**Zti[t][i] - Mt[t]
+                tl+=np.e**(Zti[t][i] - Mt[t])
         loss+=Mt[t] + np.log(tl)
     return loss
 
 if __name__ == "__main__":
 
+    for t in range(documents_len):
+        Wti[t][t % SUBJ_NUM] = 1
+
     calculate_Pki()
     calculate_alpha()
+    caclculate_Zti()
 
     for it in range(30):
         # E step
