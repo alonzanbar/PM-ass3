@@ -34,7 +34,18 @@ def read_data_lines(file):
                 c.pop(w)
         docs_size.append(sum(c.values()))
         vocab=set(words_count.keys())
-    return corpus, docs_size,vocab
+        words = sum(words_count.values())
+    return corpus, docs_size,vocab,words
+
+def ReadTopics(file):
+    topics = []
+    with open(file, 'r') as f:
+        for l in f:
+            if l == '\n':
+                continue
+            else:
+                topics.append(l.rstrip())
+    return topics
 
 if __name__=='__main__':
     cor = read_data_lines("dataset/develop.txt")

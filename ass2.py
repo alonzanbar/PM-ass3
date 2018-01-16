@@ -67,7 +67,7 @@ def main(args):
     output[17] = prep(validation,count_T,linston,train_size,1.00,train_voc_size)
     # minimize lamda
     pr=[];
-    lam = [l/1000.0 for l in xrange(1, 1000,20)]
+    lam = [l/1000.0 for l in range(1, 1000,20)]
     for l in lam:
        pr.append( prep(validation,count_T,linston,train_size,l,train_voc_size))
     best_lamda = lam[np.argmin(pr)]
